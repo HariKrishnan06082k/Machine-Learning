@@ -1,0 +1,112 @@
+#Dependencies
+
+import tensorflow as tf
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+#Reading the dataset
+dataset = pd.read_csv('Iris.csv')
+
+#Quick glance at our data set
+print(dataset.info())
+
+#Visualization of the dataset
+
+#Simple scatter plot to imagine the decision boundary of our NN
+for n in range(0,150):
+    if dataset['Species'][n] == 'Iris-setosa':
+        plt.scatter(dataset['SepalLengthCm'][n], dataset['SepalWidthCm'][n], color = 'red')
+        plt.xlabel('sepal_length')
+        plt.ylabel('sepal_width')
+    elif dataset['Species'][n] == 'Iris-versicolor':
+        plt.scatter(dataset['SepalLengthCm'][n], dataset['SepalWidthCm'][n], color = 'green')
+        plt.xlabel('sepal_length')
+        plt.ylabel('sepal_width')
+    elif dataset['Species'][n] == 'Iris-virginica':
+        plt.scatter(dataset['SepalLengthCm'][n], dataset['SepalWidthCm'][n], color = 'purple')
+        plt.xlabel('sepal_length')
+        plt.ylabel('sepal_width')
+
+#Box plot for various features
+# Plotting the features using boxes
+plt.style.use('ggplot')
+plt.subplot(2,2,1)
+sns.boxplot(x = 'Species', y = 'SepalLengthCm', data = dataset)
+plt.subplot(2,2,2)
+sns.boxplot(x = 'Species', y = 'SepalWidthCm', data = dataset)
+plt.subplot(2,2,3)
+sns.boxplot(x = 'Species', y = 'PetalLengthCm', data = dataset)
+plt.subplot(2,2,4)
+sns.boxplot(x = 'Species', y = 'PetalWidthCm', data = dataset)
+
+#Violin plot
+plt.style.use('ggplot')
+plt.subplot(2,2,1)
+sns.violinplot(x = 'Species', y = 'SepalLengthCm', data = dataset)
+plt.subplot(2,2,2)
+sns.violinplot(x = 'Species', y = 'SepalWidthCm', data = dataset)
+plt.subplot(2,2,3)
+sns.violinplot(x = 'Species', y = 'PetalLengthCm', data = dataset)
+plt.subplot(2,2,4)
+sns.violinplot(x = 'Species', y = 'PetalWidthCm', data = dataset)
+
+#OneHotEncoding the categorical variables
+dataset = pd.get_dummies(dataset, columns=['Species']) # One Hot Encoding
+values = list(dataset.columns.values)
+
+y = dataset.iloc[:,5:8].values
+y = np.array(y, dtype='float32')
+X = dataset.iloc[:,1:5].values
+X = np.array(X, dtype='float32')
+
+#Splitting the training set and test set ( 15 nos. for test ) , the random seed could be anything
+from sklearn.model_selection import train_test_split
+X_train,X_test,Y_train,Y_test=train_test_split(X,y,test_size=0.1,random_state=50)
+
+#creating a session in tensorflow
+sess = tf.Session()
+
+# Interval / Epochs
+interval = 30
+epoch = 510
+
+X_data = tf.placeholder(shape=[None, 4], dtype=tf.float32)
+y_target = tf.placeholder(shape=[None, 3], dtype=tf.float32)
+
+hidden_layer_nodes = 8
+lr = 0.001
+
+# Create variables for Neural Network layers
+w1 = tf.Variable(tf.random_normal(shape=[4,hidden_layer_nodes])) # Inputs -> Hidden Layer
+b1 = tf.Variable(tf.random_normal(shape=[hidden_layer_nodes]))   # First Bias
+w2 = tf.Variable(tf.random_normal(shape=[hidden_layer_nodes,3])) # Hidden layer -> Outputs
+b2 = tf.Variable(tf.random_normal(shape=[3]))
+
+#activations for the successive layers
+hidden_output = tf.nn.relu(tf.add(tf.matmul(X_data, w1), b1))
+final_output = tf.nn.softmax(tf.add(tf.matmul(hidden_output, w2), b2))
+
+# Cost Function (Cross Entropy)
+loss = tf.reduce_mean(-tf.reduce_sum(y_target * tf.log(final_output), axis=0))
+
+# Optimizer (Does the process of Backpropagation and tweaking the weights)
+optimizer = tf.train.GradientDescentOptimizer(learning_rate=lr).minimize(loss)
+
+# Initialize variables
+init = tf.global_variables_initializer()
+sess.run(init)
+
+# Training
+print('Training the model...')
+
+for i in range(1, (epoch + 1)):
+    sess.run(optimizer, feed_dict={X_data: X_train, y_target: Y_train})
+    if i % interval == 0:
+        print('Epoch', i, '|', 'Loss:', sess.run(loss, feed_dict={X_data: X_train, y_target: Y_train}))
+
+# Prediction
+print()
+for i in range(len(X_test)):
+    print('Actual:', Y_test[i], 'Predicted:', np.rint(sess.run(final_output, feed_dict={X_data: [X_test[i]]})))
