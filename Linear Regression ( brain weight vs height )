@@ -1,0 +1,66 @@
+#Import necessary libraries
+#numpy used for mean and linspace functions
+#matplotlib for visualization
+#pandas to read the csv file
+
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+
+#reading our file
+dataset=pd.read_csv("headbrain.csv")
+
+#A quick glance at the dataset
+print(dataset.head())
+
+#Making sure there is no missing values or 'Nan' values
+print(dataset.isnull().values.any())
+
+#splitting up our dependent and independent variavle
+X = dataset.iloc[:, 2]
+Y = dataset.iloc[:, 3]
+
+#A quick plot between X and Y
+plt.scatter(X,Y,label=' Head Size Vs Brain Weight',color='blue')
+plt.show()
+
+#Computing the mean of X and Y
+x_mean = np.mean(X)
+y_mean = np.mean(Y)
+
+numerator = 0
+denominator = 0
+
+n = len(X)
+
+for i in range(n):
+    numerator += (X[i] - x_mean) * (Y[i] - y_mean)
+    denominator += (X[i] - x_mean) ** 2
+
+b1 = numerator / denominator
+b0 = y_mean - (b1 * x_mean)
+
+#Printing the final regression line equation with the parameters of best fit
+print("Your regression line is Y = {}x + {}".format(b1, b0))
+
+x_max = np.max(X) + 100
+x_min = np.min(X) - 100
+
+x = np.linspace(x_min, x_max, 1000)
+y = b0 + b1 * x
+
+#visualizing your regression line
+# x-axis label
+plt.xlabel('Head Size (cm^3)')
+
+#y-axis label
+plt.ylabel('Brain Weight (grams)')
+
+#our data points
+plt.scatter(X,Y,color='purple',label='Data Point')
+
+#our regression line
+plt.plot(x,y,color='green',label="Regression Line")
+
+plt.legend()
+plt.show()
